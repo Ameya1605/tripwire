@@ -2,24 +2,18 @@ import React, { useState } from 'react';
 import { 
   ShieldAlert, 
   ShieldCheck, 
-  AlertTriangle, 
   Terminal, 
   Flame, 
-  Network, 
   FolderLock, 
   GitCompare, 
   Download, 
-  ExternalLink, 
   Cpu, 
   CheckCircle2, 
   Activity,
   Layers,
   ArrowRight,
-  Code2,
   Lock,
   Clock,
-  Shuffle,
-  FileCode,
   Share2
 } from 'lucide-react';
 
@@ -85,7 +79,7 @@ const DEMO_SCENARIOS: Scenario[] = [
     riskScore: 10.0,
     severity: 'CRITICAL',
     verdict: 'BLOCK',
-    summary: 'SECURITY ALERT [CRITICAL]: Synthetic canary AWS credentials breached (~/.aws/credentials) and dynamic taint flow tracked into high-entropy outbound exfiltration socket (185.199.108.153:443). Package blocked immediately.',
+    summary: 'SECURITY ALERT [CRITICAL]: Synthetic canary AWS credentials breached (~/.aws/credentials) and dynamic taint flow tracked into high-entropy outbound exfiltration socket (185.199.108.153:443). Package installation blocked immediately.',
     honeytoken: {
       type: 'AWS Credential Canary',
       target: '~/.aws/credentials',
@@ -334,44 +328,44 @@ export function App() {
     a.click();
   };
 
+  const isBlocked = current.verdict === 'BLOCK';
+
   return (
-    <div className="min-h-screen text-slate-100 p-4 md:p-8 flex flex-col gap-6 max-w-7xl mx-auto">
-      {/* Top Header */}
-      <header className="glass-panel p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-            <Layers className="w-6 h-6 animate-pulse" />
+    <div className="tw-container">
+      {/* 1. Header */}
+      <header className="tw-card tw-header">
+        <div className="tw-brand">
+          <div className="tw-logo-icon">
+            <Layers size={22} />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white">TRIPWIRE</h1>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
-                Advanced DDBA Engine
-              </span>
+          <div className="tw-title-area">
+            <div className="tw-title-row">
+              <span className="tw-title">TRIPWIRE</span>
+              <span className="tw-tag">DDBA ENGINE v0.2.0</span>
             </div>
-            <p className="text-xs text-slate-400">Time-Dilation • Taint Tracking • Seccomp Synthesis • Polyglot Registries</p>
+            <span className="tw-subtitle">
+              Differential Dynamic Behavioral Analysis for Software Supply Chains
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center flex-wrap gap-2.5">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            eBPF & Preload Hooking Active
+        <div className="tw-header-actions">
+          <div className="tw-status-badge">
+            <span className="tw-pulse-dot" />
+            <span>eBPF & Preload Hooking Active</span>
           </div>
-          <button 
-            onClick={handleDownloadSeccomp}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 transition"
-          >
-            <Lock className="w-3.5 h-3.5 text-cyan-400" />
-            Synthesize Seccomp Profile
+          <button onClick={handleDownloadSeccomp} className="tw-btn tw-btn-cyan">
+            <Lock size={14} />
+            <span>Synthesize Seccomp Profile</span>
           </button>
         </div>
       </header>
 
-      {/* Package Scenario Selection Pills */}
-      <section className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
-          <Cpu className="w-3.5 h-3.5" /> Scenarios:
+      {/* 2. Scenario Pills */}
+      <section className="tw-scenarios-bar">
+        <span className="tw-scenarios-label">
+          <Cpu size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+          Scenarios:
         </span>
         {DEMO_SCENARIOS.map(s => {
           const isSelected = s.id === selectedId;
@@ -380,60 +374,46 @@ export function App() {
             <button
               key={s.id}
               onClick={() => setSelectedId(s.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 border ${
+              className={`tw-scenario-pill ${
                 isSelected 
-                  ? isBlock
-                    ? 'bg-rose-500/20 border-rose-500 text-white shadow-lg shadow-rose-950'
-                    : 'bg-emerald-500/20 border-emerald-500 text-white shadow-lg shadow-emerald-950'
-                  : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  ? isBlock ? 'active-danger' : 'active-safe'
+                  : ''
               }`}
             >
-              <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-mono uppercase text-slate-300">
-                {s.ecosystem}
-              </span>
-              <span className={`w-1.5 h-1.5 rounded-full ${isBlock ? 'bg-rose-400' : 'bg-emerald-400'}`} />
-              {s.name}
+              <span className="tw-eco-tag">{s.ecosystem}</span>
+              <span>{s.name}</span>
             </button>
           );
         })}
       </section>
 
-      {/* Main Security Verdict Card */}
-      <section className={`glass-panel p-6 border-l-4 ${
-        current.verdict === 'BLOCK' 
-          ? 'glass-panel-alert border-l-rose-500' 
-          : 'border-l-emerald-500'
-      }`}>
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className={`px-2.5 py-1 rounded-md text-xs font-bold tracking-wide flex items-center gap-1.5 ${
-                current.verdict === 'BLOCK'
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              }`}>
-                {current.verdict === 'BLOCK' ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+      {/* 3. Hero Security Verdict Card */}
+      <section className={`tw-card ${isBlocked ? 'tw-card-danger' : 'tw-card-safe'}`}>
+        <div className="tw-verdict-grid">
+          <div className="tw-verdict-info">
+            <div className="tw-verdict-header">
+              <span className={`tw-badge-verdict ${isBlocked ? 'block' : 'pass'}`}>
+                {isBlocked ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
                 VERDICT: {current.verdict}
               </span>
 
-              <div className="flex items-center gap-2 text-sm font-mono text-slate-300">
-                <span className="font-bold text-white">{current.pkg}</span>
-                <span className="text-slate-500">{current.oldVer}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-cyan-300 font-bold">{current.newVer}</span>
+              <div className="tw-pkg-transition">
+                <span className="tw-pkg-name">{current.pkg}</span>
+                <span className="tw-ver-old">{current.oldVer}</span>
+                <ArrowRight size={13} style={{ color: 'var(--color-cyan)' }} />
+                <span className="tw-ver-new">{current.newVer}</span>
               </div>
             </div>
 
-            <p className="text-sm text-slate-300 max-w-4xl leading-relaxed">
+            <p className="tw-verdict-summary">
               {current.summary}
             </p>
 
-            {/* MITRE Tags */}
             {current.mitreTags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                <span className="text-xs text-slate-500 font-mono">MITRE ATT&CK:</span>
+              <div className="tw-mitre-row">
+                <span className="tw-mitre-label">MITRE ATT&CK:</span>
                 {current.mitreTags.map(tag => (
-                  <span key={tag.id} className="text-xs px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/30 text-purple-300 font-mono">
+                  <span key={tag.id} className="tw-mitre-badge">
                     {tag.id} • {tag.name}
                   </span>
                 ))}
@@ -441,143 +421,127 @@ export function App() {
             )}
           </div>
 
-          {/* Risk Score Gauge */}
-          <div className="flex items-center gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-            <div className="text-right">
-              <div className="text-xs text-slate-400">Risk Assessment</div>
-              <div className={`text-2xl font-black font-mono ${
-                current.riskScore >= 7.0 ? 'text-rose-400' : 'text-emerald-400'
-              }`}>
-                {current.riskScore.toFixed(1)} <span className="text-xs text-slate-500">/ 10.0</span>
+          <div className="tw-score-box">
+            <div className="tw-score-texts">
+              <div className="tw-score-label">Risk Assessment</div>
+              <div className={`tw-score-val ${isBlocked ? 'danger' : 'safe'}`}>
+                {current.riskScore.toFixed(1)} <span className="tw-score-max">/ 10.0</span>
               </div>
-              <div className="text-[11px] text-slate-500 font-mono uppercase">{current.severity} SEVERITY</div>
+              <div className="tw-score-sub">{current.severity} SEVERITY</div>
             </div>
-            <div className={`p-3 rounded-xl border ${
-              current.verdict === 'BLOCK'
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-            }`}>
-              {current.verdict === 'BLOCK' ? <Flame className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
+            <div className={`tw-score-icon-wrap ${isBlocked ? 'danger' : 'safe'}`}>
+              {isBlocked ? <Flame size={26} /> : <CheckCircle2 size={26} />}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Forensic Inspection Tabs */}
-      <section className="glass-panel overflow-hidden">
-        <div className="flex flex-wrap border-b border-slate-800 bg-slate-900/40">
+      {/* 4. Honeytoken Breach Radar (if tripped) */}
+      {current.honeytoken && (
+        <section className="tw-honeytoken-banner">
+          <div className="tw-ht-left">
+            <div className="tw-ht-icon">
+              <FolderLock size={22} />
+            </div>
+            <div>
+              <div className="tw-ht-badge-top">Active Deception Triggered • Canary Breached</div>
+              <div className="tw-ht-main">
+                {current.honeytoken.type}: <code style={{ color: '#fda4af', fontFamily: 'var(--font-mono)' }}>{current.honeytoken.target}</code>
+              </div>
+              <div className="tw-ht-sub">
+                Attributed to PID {current.honeytoken.pid} ({current.honeytoken.process}) — {current.honeytoken.evidence}
+              </div>
+            </div>
+          </div>
+          <span className="tw-ht-pill">ZERO TOLERANCE BREACH</span>
+        </section>
+      )}
+
+      {/* 5. Forensic Inspection Tabs Card */}
+      <section className="tw-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <nav className="tw-tabs-nav">
           <button
             onClick={() => setActiveTab('deltas')}
-            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
-              activeTab === 'deltas'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`tw-tab-btn ${activeTab === 'deltas' ? 'active' : ''}`}
           >
-            <GitCompare className="w-3.5 h-3.5" />
-            Behavioral Delta Anomalies ({current.deltas.length})
+            <GitCompare size={14} />
+            <span>Behavioral Delta Anomalies ({current.deltas.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('taint')}
-            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
-              activeTab === 'taint'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`tw-tab-btn ${activeTab === 'taint' ? 'active' : ''}`}
           >
-            <Share2 className="w-3.5 h-3.5" />
-            Information Flow Taint Graph
+            <Share2 size={14} />
+            <span>Information Flow Taint Graph</span>
           </button>
           <button
             onClick={() => setActiveTab('seccomp')}
-            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
-              activeTab === 'seccomp'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`tw-tab-btn ${activeTab === 'seccomp' ? 'active' : ''}`}
           >
-            <Lock className="w-3.5 h-3.5" />
-            Least-Privilege Seccomp Synthesizer
+            <Lock size={14} />
+            <span>Least-Privilege Seccomp Synthesizer</span>
           </button>
           <button
             onClick={() => setActiveTab('timewarp')}
-            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
-              activeTab === 'timewarp'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`tw-tab-btn ${activeTab === 'timewarp' ? 'active' : ''}`}
           >
-            <Clock className="w-3.5 h-3.5" />
-            Time-Warp Evasion Neutralizer
+            <Clock size={14} />
+            <span>Time-Warp Evasion Neutralizer</span>
           </button>
           <button
             onClick={() => setActiveTab('trace')}
-            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
-              activeTab === 'trace'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`tw-tab-btn ${activeTab === 'trace' ? 'active' : ''}`}
           >
-            <Terminal className="w-3.5 h-3.5" />
-            Execution Trace Diff
+            <Terminal size={14} />
+            <span>Execution Trace Diff</span>
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
-              activeTab === 'stats'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            className={`tw-tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
           >
-            <Activity className="w-3.5 h-3.5" />
-            Empirical Benchmark Proof (0% FPR)
+            <Activity size={14} />
+            <span>Empirical Benchmark Proof (0% FPR)</span>
           </button>
-        </div>
+        </nav>
 
-        <div className="p-6">
+        <div className="tw-tabs-content">
           {/* TAB 1: DELTAS */}
           {activeTab === 'deltas' && (
-            <div className="space-y-4">
+            <div>
               {current.deltas.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 space-y-2">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-                  <div className="text-base font-semibold text-white">No Malicious Behavioral Deltas Isolated</div>
-                  <p className="text-xs max-w-md mx-auto">
-                    All runtime operations performed by {current.pkg}@{current.newVer} match the baseline behavioral fingerprint of {current.oldVer}.
+                <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+                  <CheckCircle2 size={44} style={{ color: 'var(--color-emerald)', margin: '0 auto 12px' }} />
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>No Malicious Behavioral Deltas Isolated</div>
+                  <p style={{ fontSize: 13, marginTop: 4 }}>
+                    All runtime operations performed by {current.pkg}@{current.newVer} match the verified baseline fingerprint of {current.oldVer}.
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <div className="tw-table-wrap">
+                  <table className="tw-table">
                     <thead>
-                      <tr className="border-b border-slate-800 text-xs font-mono text-slate-400">
-                        <th className="py-2.5 px-3">CATEGORY</th>
-                        <th className="py-2.5 px-3">SEVERITY</th>
-                        <th className="py-2.5 px-3">ANOMALY SUMMARY</th>
-                        <th className="py-2.5 px-3">BASELINE (OLD)</th>
-                        <th className="py-2.5 px-3">OBSERVED (NEW)</th>
-                        <th className="py-2.5 px-3">MITRE</th>
+                      <tr>
+                        <th>Category</th>
+                        <th>Severity</th>
+                        <th>Anomaly Summary</th>
+                        <th>Baseline (Old)</th>
+                        <th>Observed (New)</th>
+                        <th>MITRE</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-xs">
+                    <tbody>
                       {current.deltas.map((d, i) => (
-                        <tr key={i} className="hover:bg-slate-800/20 font-mono">
-                          <td className="py-3 px-3">
-                            <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 uppercase text-[11px]">
-                              {d.category}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                              d.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'
-                            }`}>
+                        <tr key={i}>
+                          <td><span className="tw-cat-pill">{d.category}</span></td>
+                          <td>
+                            <span className={`tw-sev-pill ${d.severity.toLowerCase()}`}>
                               {d.severity}
                             </span>
                           </td>
-                          <td className="py-3 px-3 font-sans text-slate-200">{d.summary}</td>
-                          <td className="py-3 px-3 text-slate-500">{d.oldState}</td>
-                          <td className="py-3 px-3 text-amber-300 font-bold">{d.newState}</td>
-                          <td className="py-3 px-3 text-purple-300">{d.mitre}</td>
+                          <td style={{ fontWeight: 500, color: '#f1f5f9' }}>{d.summary}</td>
+                          <td style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{d.oldState}</td>
+                          <td style={{ color: '#fde047', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{d.newState}</td>
+                          <td style={{ color: '#d8b4fe', fontFamily: 'var(--font-mono)' }}>{d.mitre}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -587,89 +551,83 @@ export function App() {
             </div>
           )}
 
-          {/* TAB 2: TAINT FLOW GRAPH */}
+          {/* TAB 2: TAINT GRAPH */}
           {activeTab === 'taint' && (
-            <div className="space-y-6">
-              <div className="text-sm font-semibold text-white flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-cyan-400" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Share2 size={16} style={{ color: 'var(--color-cyan)' }} />
                 Dynamic Information Flow Tracking (DIFT) & Entropy Analysis
               </div>
-              
+
               {current.taintFlow ? (
-                <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                    {/* Source */}
-                    <div className="p-4 rounded-lg bg-rose-950/30 border border-rose-500/40 space-y-1">
-                      <div className="text-[10px] font-mono text-rose-400 font-bold uppercase">1. Sensitive Source</div>
-                      <div className="text-sm font-bold text-white font-mono">{current.taintFlow.source}</div>
-                      <div className="text-xs text-slate-400">Canary credential asset accessed via openat()</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="tw-taint-pipeline">
+                    <div className="tw-taint-card step-1">
+                      <span className="tw-step-indicator">1. Sensitive Source</span>
+                      <span className="tw-taint-title">{current.taintFlow.source}</span>
+                      <span className="tw-taint-sub">Canary credential asset read via openat()</span>
                     </div>
 
-                    {/* Transform */}
-                    <div className="p-4 rounded-lg bg-purple-950/30 border border-purple-500/40 space-y-1">
-                      <div className="text-[10px] font-mono text-purple-400 font-bold uppercase">2. Taint Transform & Shannon Entropy</div>
-                      <div className="text-sm font-bold text-white font-mono">{current.taintFlow.transformation}</div>
-                      <div className="text-xs text-purple-300 font-mono">H = {current.taintFlow.entropy} (Spike detected &gt; 4.5)</div>
+                    <div className="tw-taint-card step-2">
+                      <span className="tw-step-indicator">2. Taint Transform & Shannon Entropy</span>
+                      <span className="tw-taint-title">{current.taintFlow.transformation}</span>
+                      <span className="tw-taint-sub" style={{ color: '#d8b4fe', fontFamily: 'var(--font-mono)' }}>
+                        Shannon Entropy H = {current.taintFlow.entropy} (Spike &gt; 4.5)
+                      </span>
                     </div>
 
-                    {/* Sink */}
-                    <div className="p-4 rounded-lg bg-rose-950/30 border border-rose-500/40 space-y-1">
-                      <div className="text-[10px] font-mono text-rose-400 font-bold uppercase">3. Exfiltration Sink</div>
-                      <div className="text-sm font-bold text-white font-mono">{current.taintFlow.sink}</div>
-                      <div className="text-xs text-slate-400">Outbound egress socket payload transmission</div>
+                    <div className="tw-taint-card step-3">
+                      <span className="tw-step-indicator">3. Exfiltration Sink</span>
+                      <span className="tw-taint-title">{current.taintFlow.sink}</span>
+                      <span className="tw-taint-sub">Outbound network socket buffer transmission</span>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs space-y-2">
-                    <div className="text-slate-400">Captured Encoded Canary Variant:</div>
-                    <code className="text-cyan-300 block bg-black/40 p-2.5 rounded border border-slate-800 break-all">
-                      {current.taintFlow.encodedVariant}
-                    </code>
-                    <div className="text-[11px] text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Captured Encoded Canary Variant in Payload:</span>
+                    <div className="tw-code-box">{current.taintFlow.encodedVariant}</div>
+                    <span style={{ fontSize: 11, color: 'var(--color-emerald)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                      <CheckCircle2 size={13} />
                       Tripwire Sub-Byte Canary Matcher confirmed exact cryptographic hash correlation.
-                    </div>
+                    </span>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-10 text-slate-500 font-mono text-xs">
+                <div style={{ textAlign: 'center', padding: '36px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                   Zero tainted data flows detected between filesystem sources and network sockets.
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 3: SECCOMP SYNTHESIZER */}
+          {/* TAB 3: SECCOMP PROFILE */}
           {activeTab === 'seccomp' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-cyan-400" />
-                    Auto-Synthesized Least-Privilege Seccomp-BPF Profile
-                  </h3>
-                  <p className="text-xs text-slate-400">Kernel-enforced syscall boundary generated from baseline envelope.</p>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Lock size={16} style={{ color: 'var(--color-cyan)' }} />
+                    Auto-Synthesized Least-Privilege Seccomp-BPF Policy
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Kernel-enforced syscall boundary generated from baseline envelope.</div>
                 </div>
-                <button
-                  onClick={handleDownloadSeccomp}
-                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold flex items-center gap-1.5 hover:bg-cyan-500/30 transition"
-                >
-                  <Download className="w-3.5 h-3.5" /> Download seccomp-{current.pkg}.json
+                <button onClick={handleDownloadSeccomp} className="tw-btn tw-btn-cyan">
+                  <Download size={14} /> Download seccomp-{current.pkg}.json
                 </button>
               </div>
 
-              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between text-slate-400 pb-2 border-b border-slate-800">
-                  <span>Default Action: <strong className="text-rose-400">SCMP_ACT_ERRNO (EPERM)</strong></span>
-                  <span>Whitelisted Syscalls: <strong className="text-emerald-400">{current.seccompAllowedCount} approved</strong></span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: '#02050b', padding: 18, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 8 }}>
+                  <span>Default Action: <strong style={{ color: 'var(--color-rose)' }}>SCMP_ACT_ERRNO (EPERM)</strong></span>
+                  <span>Whitelisted Syscalls: <strong style={{ color: 'var(--color-emerald)' }}>{current.seccompAllowedCount} approved</strong></span>
                 </div>
-                <div className="text-slate-300">
-                  <span className="text-slate-500">// Run in production Docker with kernel gating:</span><br/>
-                  <code className="text-cyan-300 block bg-slate-900 p-2.5 rounded border border-slate-800 mt-1">
+                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ color: 'var(--text-dim)', marginBottom: 4 }}>// Run in production Docker with kernel gating:</div>
+                  <div className="tw-code-box">
                     docker run --security-opt seccomp=seccomp-{current.pkg}.json -v /app:/app my-container
-                  </code>
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-400 pt-1">
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                   * If an updated version attempts unapproved syscalls (e.g. <code>connect()</code> or <code>execve()</code>), the Linux kernel blocks execution with <code>EPERM</code> immediately.
                 </div>
               </div>
@@ -678,75 +636,74 @@ export function App() {
 
           {/* TAB 4: TIME-WARP EVASION */}
           {activeTab === 'timewarp' && (
-            <div className="space-y-6">
-              <div className="text-sm font-semibold text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-cyan-400" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Clock size={16} style={{ color: 'var(--color-cyan)' }} />
                 Time-Dilation & Anti-Analysis Neutralization Engine
               </div>
 
               {current.timeWarp ? (
-                <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 space-y-4 font-mono text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-amber-400 font-bold uppercase">{current.timeWarp.technique} Detected</span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, background: '#02050b', padding: 20, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--color-amber)', fontWeight: 700 }}>{current.timeWarp.technique} Detected</span>
+                    <span style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(16, 185, 129, 0.2)', color: 'var(--color-emerald)', border: '1px solid var(--border-emerald)' }}>
                       STATUS: {current.timeWarp.status}
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-3 bg-slate-900 rounded border border-slate-800">
-                      <div className="text-slate-500">Malware Sleep Request:</div>
-                      <div className="text-white font-bold text-sm mt-1">{current.timeWarp.durationIntercepted}</div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ background: '#0b1120', padding: 12, borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ color: 'var(--text-dim)', fontSize: 11 }}>Malware Sleep Request:</div>
+                      <div style={{ color: '#ffffff', fontWeight: 700, fontSize: 14, marginTop: 4 }}>{current.timeWarp.durationIntercepted}</div>
                     </div>
-                    <div className="p-3 bg-slate-900 rounded border border-slate-800">
-                      <div className="text-slate-500">Tripwire Virtual Clock Acceleration:</div>
-                      <div className="text-cyan-400 font-bold text-sm mt-1">{current.timeWarp.virtualClockAdvanced} (0ms real delay)</div>
+                    <div style={{ background: '#0b1120', padding: 12, borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ color: 'var(--text-dim)', fontSize: 11 }}>Tripwire Virtual Clock Acceleration:</div>
+                      <div style={{ color: 'var(--color-cyan)', fontWeight: 700, fontSize: 14, marginTop: 4 }}>{current.timeWarp.virtualClockAdvanced} (0ms real delay)</div>
                     </div>
                   </div>
-                  <p className="text-slate-400 font-sans text-xs">
+
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     Tripwire preloads <code>libtripwire_timewarp.so</code> to hook <code>clock_gettime</code> and <code>nanosleep</code>. When the package requested a 5-minute sleep to outwait the sandbox, virtual time was instantaneously fast-forwarded, detonating the delayed payload immediately.
                   </p>
                 </div>
               ) : (
-                <div className="text-center py-10 text-slate-500 font-mono text-xs">
+                <div style={{ textAlign: 'center', padding: '36px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                   Zero sleep bombs or anti-analysis timing evasion detected in package installation trace.
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 5: TRACE */}
+          {/* TAB 5: TRACE DIFF */}
           {activeTab === 'trace' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-800">
-                  <span className="font-semibold text-slate-200">Baseline Release ({current.oldVer})</span>
-                  <span className="text-[11px] text-slate-500">Verified Empirical Baseline</span>
+            <div className="tw-trace-grid">
+              <div className="tw-terminal-window">
+                <div className="tw-terminal-header">
+                  <span>Baseline Release ({current.oldVer})</span>
+                  <span style={{ color: 'var(--text-dim)' }}>Empirical Baseline</span>
                 </div>
-                <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-1.5 overflow-x-auto min-h-[220px]">
+                <div className="tw-terminal-body">
                   {current.rawTraceOld.map((line, idx) => (
-                    <div key={idx} className="text-slate-400 hover:text-slate-200">
-                      <span className="text-slate-600 select-none mr-2">{idx + 1}</span>
-                      {line}
+                    <div key={idx} className="tw-trace-line">
+                      <span className="tw-line-num">{idx + 1}</span>
+                      <span>{line}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-800">
-                  <span className="font-semibold text-slate-200">Candidate Release ({current.newVer})</span>
-                  <span className="text-[11px] text-cyan-400">Differential Detonation</span>
+              <div className="tw-terminal-window">
+                <div className="tw-terminal-header">
+                  <span>Candidate Release ({current.newVer})</span>
+                  <span style={{ color: 'var(--color-cyan)' }}>Differential Detonation</span>
                 </div>
-                <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-1.5 overflow-x-auto min-h-[220px]">
+                <div className="tw-terminal-body">
                   {current.rawTraceNew.map((line, idx) => {
                     const isMutation = line.includes('[MUTATION]') || line.includes('[TAINT_FLOW]') || line.includes('[TIMEWARP]');
                     return (
-                      <div 
-                        key={idx} 
-                        className={isMutation ? 'text-rose-400 bg-rose-500/10 px-1 rounded font-bold' : 'text-slate-400 hover:text-slate-200'}
-                      >
-                        <span className="text-slate-600 select-none mr-2">{idx + 1}</span>
-                        {line}
+                      <div key={idx} className={`tw-trace-line ${isMutation ? 'mutation' : ''}`}>
+                        <span className="tw-line-num">{idx + 1}</span>
+                        <span>{line}</span>
                       </div>
                     );
                   })}
@@ -755,54 +712,53 @@ export function App() {
             </div>
           )}
 
-          {/* TAB 6: STATS */}
+          {/* TAB 6: BENCHMARK PROOF */}
           {activeTab === 'stats' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400">Baseline Telemetry</div>
-                  <div className="text-xl font-bold font-mono text-white mt-1">
-                    {current.telemetry.baselineSyscalls.toLocaleString()} <span className="text-xs font-normal text-slate-500">syscalls</span>
-                  </div>
+            <div>
+              <div className="tw-stats-grid">
+                <div className="tw-stat-card">
+                  <div className="tw-stat-title">Baseline Telemetry</div>
+                  <div className="tw-stat-val">{current.telemetry.baselineSyscalls.toLocaleString()}</div>
+                  <div className="tw-stat-sub">Recorded baseline syscalls</div>
                 </div>
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400">Candidate Telemetry</div>
-                  <div className="text-xl font-bold font-mono text-cyan-300 mt-1">
-                    {current.telemetry.candidateSyscalls.toLocaleString()} <span className="text-xs font-normal text-slate-500">syscalls</span>
-                  </div>
+
+                <div className="tw-stat-card">
+                  <div className="tw-stat-title">Candidate Telemetry</div>
+                  <div className="tw-stat-val" style={{ color: 'var(--color-cyan)' }}>{current.telemetry.candidateSyscalls.toLocaleString()}</div>
+                  <div className="tw-stat-sub">Recorded candidate syscalls</div>
                 </div>
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400">Differential Noise Cancellation</div>
-                  <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
-                    {current.telemetry.noisePct}% <span className="text-xs font-normal text-slate-500">({current.telemetry.noiseFiltered.toLocaleString()} events)</span>
-                  </div>
+
+                <div className="tw-stat-card">
+                  <div className="tw-stat-title">Differential Cancellation</div>
+                  <div className="tw-stat-val" style={{ color: 'var(--color-emerald)' }}>{current.telemetry.noisePct}%</div>
+                  <div className="tw-stat-sub">{current.telemetry.noiseFiltered.toLocaleString()} benign events filtered</div>
                 </div>
               </div>
 
-              <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-cyan-400" />
+              <div className="tw-benchmark-compare">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Activity size={16} style={{ color: 'var(--color-cyan)' }} />
                     Empirical Benchmark: Single-Snapshot vs Tripwire DDBA
-                  </h3>
-                  <span className="text-xs text-slate-500 font-mono">Dataset: 25 Package Releases</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>Dataset: 25 Package Releases</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-                  <div className="p-4 rounded-lg bg-rose-950/20 border border-rose-500/20 space-y-2">
-                    <div className="text-rose-300 font-bold">Single-Snapshot Dynamic (OpenSSF Baseline)</div>
-                    <div className="text-slate-400">Detection Recall: <span className="text-white font-bold">100%</span></div>
-                    <div className="text-slate-400">False Positive Rate: <span className="text-rose-400 font-bold">40.0% (8/20 benign flagged)</span></div>
-                    <div className="text-slate-400">Precision: <span className="text-white font-bold">38.5%</span></div>
-                    <div className="text-slate-400">F1 Score: <span className="text-white font-bold">55.6</span></div>
+                <div className="tw-bench-columns">
+                  <div className="tw-bench-card legacy">
+                    <div className="tw-bench-title">Single-Snapshot Dynamic (OpenSSF Baseline)</div>
+                    <div>Detection Recall: <strong style={{ color: '#ffffff' }}>100%</strong></div>
+                    <div>False Positive Rate: <strong style={{ color: 'var(--color-rose)' }}>40.0% (8/20 benign flagged)</strong></div>
+                    <div>Precision: <strong style={{ color: '#ffffff' }}>38.5%</strong></div>
+                    <div>F1 Score: <strong style={{ color: '#ffffff' }}>55.6</strong></div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-emerald-950/20 border border-emerald-500/20 space-y-2">
-                    <div className="text-emerald-300 font-bold">Tripwire DDBA (Differential Baseline Delta)</div>
-                    <div className="text-slate-400">Detection Recall: <span className="text-white font-bold">100% (5/5 attacks caught)</span></div>
-                    <div className="text-slate-400">False Positive Rate: <span className="text-emerald-400 font-bold">0.0% (0/20 benign flagged)</span></div>
-                    <div className="text-slate-400">Precision: <span className="text-white font-bold">100.0%</span></div>
-                    <div className="text-slate-400">F1 Score: <span className="text-emerald-400 font-bold">100.0 (+44.4 higher)</span></div>
+                  <div className="tw-bench-card tripwire">
+                    <div className="tw-bench-title">Tripwire DDBA (Differential Delta)</div>
+                    <div>Detection Recall: <strong style={{ color: '#ffffff' }}>100% (5/5 attacks caught)</strong></div>
+                    <div>False Positive Rate: <strong style={{ color: 'var(--color-emerald)' }}>0.0% (0/20 benign flagged)</strong></div>
+                    <div>Precision: <strong style={{ color: '#ffffff' }}>100.0%</strong></div>
+                    <div>F1 Score: <strong style={{ color: 'var(--color-emerald)' }}>100.0 (+44.4 higher)</strong></div>
                   </div>
                 </div>
               </div>
@@ -812,10 +768,11 @@ export function App() {
       </section>
 
       {/* Footer */}
-      <footer className="text-center py-4 text-xs text-slate-500 font-mono">
+      <footer className="tw-footer">
         Tripwire: Differential Dynamic Behavioral Analysis • Licensed under Apache 2.0 • Security Benchmark Verified
       </footer>
     </div>
   );
 }
+
 export default App;
