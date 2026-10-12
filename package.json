@@ -14,6 +14,13 @@
     "serve": "node bin/tripwire.js serve",
     "dashboard": "cd dashboard && npm run dev"
   },
+  "files": [
+    "bin",
+    "src",
+    "sandbox",
+    "README.md",
+    "pyproject.toml"
+  ],
   "keywords": [
     "supply-chain-security",
     "ddba",
