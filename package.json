@@ -1,0 +1,33 @@
+{
+  "name": "tripwire-sec",
+  "version": "0.1.0",
+  "description": "Differential Dynamic Behavioral Analysis (DDBA) for Software Supply Chains",
+  "main": "bin/tripwire.js",
+  "bin": {
+    "tripwire": "./bin/tripwire.js"
+  },
+  "scripts": {
+    "diff": "node bin/tripwire.js diff",
+    "audit": "node bin/tripwire.js audit",
+    "benchmark": "node bin/tripwire.js benchmark",
+    "seccomp": "node bin/tripwire.js seccomp",
+    "serve": "node bin/tripwire.js serve",
+    "dashboard": "cd dashboard && npm run dev"
+  },
+  "keywords": [
+    "supply-chain-security",
+    "ddba",
+    "dynamic-analysis",
+    "syscalls",
+    "strace",
+    "ebpf",
+    "honeytokens",
+    "seccomp",
+    "npm-audit"
+  ],
+  "author": "Tripwire Security Research Team",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
