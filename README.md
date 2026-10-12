@@ -102,7 +102,7 @@ pip install tripwire-sec
 npx tripwire-sec diff express@4.18.1 express@4.18.2
 
 # Or clone from source:
-git clone https://github.com/tripwire-sec/tripwire.git
+git clone https://github.com/Ameya1605/tripwire.git
 cd tripwire
 pip install -e .
 ```
