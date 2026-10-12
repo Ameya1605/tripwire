@@ -120,7 +120,7 @@ class DetonationSandbox:
         Matches against known supply-chain attack scenario fixtures if present.
         """
         try:
-            from benchmark.fixtures.attack_simulations import ATTACK_SCENARIOS
+            from tripwire.core.fixtures import ATTACK_SCENARIOS
             pkg_name = package_spec.split("@")[0] if "@" in package_spec else package_spec
             pkg_ver = package_spec.split("@")[-1] if "@" in package_spec else "latest"
 
