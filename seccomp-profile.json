@@ -1,0 +1,49 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "architectures": [
+    "SCMP_ARCH_X86_64",
+    "SCMP_ARCH_X86",
+    "SCMP_ARCH_AARCH64"
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "access",
+        "brk",
+        "clone",
+        "clone3",
+        "close",
+        "execve",
+        "exit_group",
+        "fork",
+        "fstat",
+        "futex",
+        "getpid",
+        "getrandom",
+        "ioctl",
+        "lseek",
+        "mmap",
+        "mprotect",
+        "munmap",
+        "nanosleep",
+        "newfstatat",
+        "openat",
+        "pipe2",
+        "read",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "rt_sigreturn",
+        "sched_yield",
+        "select",
+        "set_robust_list",
+        "statx",
+        "vfork",
+        "wait4",
+        "write"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [],
+      "comment": "Auto-synthesized by Tripwire for package express@4.18.2"
+    }
+  ]
+}

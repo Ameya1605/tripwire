@@ -192,5 +192,39 @@ def serve(
     uvicorn.run("tripwire.api.server:app", host=host, port=port, reload=False)
 
 
+@app.command()
+def seccomp(
+    package_spec: str = typer.Argument(..., help="Package spec to generate least-privilege Seccomp profile for (e.g. 'express@4.18.2')"),
+    out: Optional[str] = typer.Option("seccomp-profile.json", "--out", "-o", help="Output filepath for synthesized Seccomp JSON profile"),
+    action: str = typer.Option("SCMP_ACT_ERRNO", "--action", "-a", help="Default kernel action for unapproved syscalls: SCMP_ACT_ERRNO or SCMP_ACT_KILL_PROCESS"),
+):
+    """
+    Synthesize an automated least-privilege Seccomp-BPF kernel security profile for production containers.
+    """
+    print_banner()
+    from tripwire.core.seccomp_synthesizer import SeccompPolicySynthesizer
+    
+    console.print(f"[*] Analyzing baseline syscall envelope for [bold cyan]{package_spec}[/]...")
+    honeytokens = HoneytokenManager()
+    sandbox = DetonationSandbox(honeytokens=honeytokens)
+    normalizer = TraceNormalizer(honeytokens=honeytokens)
+    
+    name = package_spec.split("@")[0] if "@" in package_spec else package_spec
+    ver = package_spec.split("@")[-1] if "@" in package_spec else "latest"
+    raw_trace, dur, _ = sandbox.detonate(package_spec)
+    tracer = SyscallTracer()
+    for idx, line in enumerate(raw_trace.splitlines(), 1):
+        tracer.parse_line(line, line_number=idx)
+    fp = normalizer.canonicalize_trace(tracer, name, ver, duration_sec=dur)
+    
+    synthesizer = SeccompPolicySynthesizer()
+    profile = synthesizer.generate_seccomp_profile(fp, default_action=action)
+    
+    out_path = Path(out)
+    out_path.write_text(json.dumps(profile, indent=2))
+    console.print(f"[bold green]Success:[/] Generated least-privilege Seccomp profile at [bold]{out_path.resolve()}[/]")
+    console.print(f"Docker Enforcement Flag: [bold cyan]{synthesizer.export_docker_flag(str(out_path))}[/]\n")
+
+
 if __name__ == "__main__":
     app()

