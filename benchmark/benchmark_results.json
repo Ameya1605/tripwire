@@ -1,0 +1,218 @@
+{
+  "timestamp": "2026-10-12T09:50:00Z",
+  "sample_size": 25,
+  "metrics": {
+    "single_snapshot": {
+      "recall": 100.0,
+      "precision": 38.5,
+      "fpr": 40.0,
+      "f1": 55.6,
+      "fp_count": 8
+    },
+    "tripwire_ddba": {
+      "recall": 100.0,
+      "precision": 100.0,
+      "fpr": 0.0,
+      "f1": 100.0,
+      "fp_count": 0
+    },
+    "fp_reduction_percent": 100.0
+  },
+  "log": [
+    {
+      "id": "CVE-2018-20834-EVENTSTREAM",
+      "type": "malicious",
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "BLOCKED",
+      "risk_score": 10.0
+    },
+    {
+      "id": "CVE-2021-42574-UAPARSER",
+      "type": "malicious",
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "BLOCKED",
+      "risk_score": 10.0
+    },
+    {
+      "id": "CVE-2022-23812-NODEIPC",
+      "type": "malicious",
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "BLOCKED",
+      "risk_score": 10.0
+    },
+    {
+      "id": "ATTACK-CANARY-EXFIL",
+      "type": "malicious",
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "BLOCKED",
+      "risk_score": 10.0
+    },
+    {
+      "id": "ATTACK-BACKDOOR-POSTINSTALL",
+      "type": "malicious",
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "BLOCKED",
+      "risk_score": 10.0
+    },
+    {
+      "id": "express@4.18.2",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "lodash@4.17.21",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "chalk@4.1.2",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "commander@9.1.0",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "debug@4.3.4",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "esbuild@0.14.1",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "node-sass@7.0.1",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "puppeteer@13.1.0",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "sharp@0.30.1",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "semver@7.3.7",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "axios@0.26.1",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "tslib@2.3.1",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "yargs@17.4.0",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "glob@7.2.1",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "uuid@8.3.2",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "dotenv@16.0.1",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "ws@8.5.1",
+      "type": "benign",
+      "has_native_scripts": false,
+      "single_snapshot": "PASSED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "webpack@5.71.0",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "core-js@3.21.1",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    },
+    {
+      "id": "sqlite3@5.0.3",
+      "type": "benign",
+      "has_native_scripts": true,
+      "single_snapshot": "FLAGGED",
+      "tripwire_ddba": "PASSED",
+      "risk_score": 1.0
+    }
+  ]
+}

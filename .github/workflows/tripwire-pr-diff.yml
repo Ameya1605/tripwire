@@ -1,0 +1,73 @@
+name: "Tripwire: Behavioral Supply Chain Security Check"
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "pnpm-lock.yaml"
+      - "yarn.lock"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  tripwire-audit:
+    name: "Differential Dynamic Supply Chain Diff"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Tripwire Security Engine
+        run: |
+          pip install --upgrade pip
+          pip install git+https://github.com/tripwire-sec/tripwire.git
+
+      - name: Execute Differential Behavioral Audit
+        id: tripwire
+        run: |
+          tripwire audit package-lock.json --out tripwire-report.json
+          tripwire audit package-lock.json --format markdown --out tripwire-comment.md
+          tripwire audit package-lock.json --format sarif --out tripwire.sarif
+        continue-on-error: true
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: tripwire.sarif
+          category: "tripwire-ddba"
+
+      - name: Post PR Behavioral Diff Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('tripwire-comment.md')) {
+              const body = fs.readFileSync('tripwire-comment.md', 'utf8');
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+
+      - name: Enforce Supply Chain Gating
+        run: |
+          if [ "${{ steps.tripwire.outcome }}" != "success" ]; then
+            echo "::error::Tripwire flagged critical behavioral mutations in upgraded dependencies!"
+            exit 1
+          fi

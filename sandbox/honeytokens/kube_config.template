@@ -1,0 +1,17 @@
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://canary-k8s-cluster.internal.tripwire:6443
+  name: canary-cluster-{{CANARY_ID}}
+contexts:
+- context:
+    cluster: canary-cluster-{{CANARY_ID}}
+    user: canary-user-{{CANARY_ID}}
+  name: canary-context
+current-context: canary-context
+kind: Config
+preferences: {}
+users:
+- user:
+    token: eyJhbGciOiJSUzI1NiIsImtpZCI6InRyaXB3aXJlLWNhbmFyeS0ke0NBTkFSWV9JRH0ifQ.{{CANARY_HASH}}
+  name: canary-user-{{CANARY_ID}}

@@ -1,0 +1,30 @@
+# Ephemeral Detonation Sandbox for Dynamic Behavioral Tracing
+FROM node:20-bookworm-slim
+
+# Install system tracing and telemetry instrumentation tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    strace \
+    iproute2 \
+    procps \
+    dnsutils \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create dedicated unprivileged execution user
+RUN useradd -m -s /bin/bash -u 1001 sandbox-runner
+
+# Create detonation workspace and output directories
+RUN mkdir -p /detonation /trace /honeytokens && \
+    chown -R sandbox-runner:sandbox-runner /detonation /trace /honeytokens
+
+WORKDIR /detonation
+
+# Copy entrypoint wrapper
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+USER sandbox-runner
+ENV HOME=/home/sandbox-runner
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

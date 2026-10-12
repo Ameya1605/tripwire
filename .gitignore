@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+
+# Node & Dashboard
+node_modules/
+dashboard/node_modules/
+dashboard/dist/
+.DS_Store
+
+# Temporary trace outputs
+*.trace
+tripwire.sarif
+tripwire-report.json
+tripwire-comment.md
