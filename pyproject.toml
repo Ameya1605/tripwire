@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tripwire-sec"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tripwire: Differential Dynamic Behavioral Analysis (DDBA) for Software Supply Chains"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -1,5 +1,6 @@
 # ⚡ Tripwire: Differential Dynamic Behavioral Analysis (DDBA) for Software Supply Chains
 
+[![PyPI version](https://img.shields.io/pypi/v/tripwire-sec.svg?color=blue)](https://pypi.org/project/tripwire-sec/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Sandbox-Docker%20%2B%20Linux%20strace-2496ED.svg)](https://docker.com)
 [![SARIF](https://img.shields.io/badge/Standard-SARIF%202.1.0-8A2BE2.svg)](https://docs.github.com/en/code-security/code-scanning)
@@ -94,10 +95,15 @@ Any access to these tokens flags an immediate **CRITICAL SEVERITY (Score: 10.0)*
 
 ### 1. Installation
 ```bash
+# Install directly from PyPI (Recommended)
+pip install tripwire-sec
+
+# Or run instantly via npx (Node CLI wrapper)
+npx tripwire-sec diff express@4.18.1 express@4.18.2
+
+# Or clone from source:
 git clone https://github.com/tripwire-sec/tripwire.git
 cd tripwire
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
 pip install -e .
 ```
 
